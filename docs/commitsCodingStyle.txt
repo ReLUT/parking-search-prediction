@@ -1,0 +1,35 @@
+    TST: Changes related to tests.
+        E.g., TST: Add unit test for login function
+
+    DOC: Documentation changes.
+        E.g., DOC: Update README with deployment steps
+
+    MAINT: Maintenance tasks like minor tweaks, bug fixes, and other tasks that don't modify functionality.
+        E.g., MAINT: Fix typo in variable name
+
+    REF: Code refactoring, which restructures existing code without changing its external behavior.
+        E.g., REF: Simplify logic in sorting algorithm
+
+    FEAT: Introduction of a new feature.
+        E.g., FEAT: Add API endpoint for user registration
+
+    BUG: A bug fix.
+        E.g., BUG: Fix login issue where password wasn't checked
+
+    PERF: Performance improvements.
+        E.g., PERF: Optimize database query for faster results
+
+    STYL: Changes related to code style (linting, formatting).
+        E.g., STYL: Apply PEP8 formatting
+
+    BUILD: Changes related to the build system or dependencies.
+        E.g., BUILD: Update package.json with new version of lodash
+
+    CI: Changes related to Continuous Integration configuration or scripts.
+        E.g., CI: Update Travis configuration to use new container system
+
+    ENH: For enhancements to an existing function or feature.
+        E.g., ENH: Extend search functionality to support filters
+
+    WIP: For "Work In Progress". If you wish to commit intermediate changes which aren't complete or final.
+        E.g., WIP: Continuing development of advanced search
