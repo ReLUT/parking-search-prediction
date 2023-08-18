@@ -532,9 +532,3 @@ def prepare_data(df, n_lagged_Vars=5):
         )
 
     return df_model
-
-
-
-
-
-
