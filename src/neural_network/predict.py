@@ -1,5 +1,9 @@
-from model import load_model
+from model import *
+from train import *
 import tensorflow as tf
+
+def load_model(path="path/to/load/from"):
+    return tf.keras.models.load_model(path)
 
 def load_new_data():
     # Load new data for prediction
