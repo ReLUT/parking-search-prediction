@@ -70,12 +70,12 @@ def show_eval(
 
     MAE = (df[var1] - df[var2]).apply(np.abs).mean()
     RMSE = (df[var1] - df[var2]).apply(np.square).mean() ** 0.5
-    print("mean actual psd:        ", dur_show(df[var2].mean(), unit="min"))
-    print("mean predictions psd:   ", dur_show(df[var1].mean(), unit="min"))
+    print("mean actual psd:         ", dur_show(df[var2].mean(), unit="min"))
+    print("mean predictions psd:    ", dur_show(df[var1].mean(), unit="min"))
     if display_MAE:
-        print("mean absolute error:    ", dur_show(MAE, unit="min"))
+        print("mean absolute error:     ", dur_show(MAE, unit="min"))
     if display_RMSE:
-        print("root mean squred error: ", dur_show(RMSE, unit="min"))
+        print("root mean squared error: ", dur_show(RMSE, unit="min"))
 
 
 def remaining_Time(group):
@@ -195,7 +195,7 @@ def nn_model(
         loss="binary_crossentropy", optimizer="adam", metrics=[f1_score, "accuracy"]
     )
     # Train the model
-    if balance_classes == True:
+    if balance_classes:
         class_weights = class_weight.compute_class_weight(
             "balanced", classes=np.unique(y_train), y=y_train
         )
@@ -246,7 +246,7 @@ def predictions_clean(group):
 
 def make_clean_preds(model, X_test, y_test, optimal_p=0.5, verbose=0):
     """
-    make precitions for a test set
+    make predictions for a test set
     """
 
     # Make predictions
@@ -307,7 +307,7 @@ def best_cutoff_p(model, X_eval, y_eval, p_low, p_high, metric_psd="MAE", verbos
     """
     This function finds the best cutoff point for binary prediction
 
-    Parametrs
+    Parameters
     ======================
 
     model: the trained neural network model
@@ -534,21 +534,7 @@ def prepare_data(df, n_lagged_Vars=5):
     return df_model
 
 
-def build_model(input_shape):
-    model = tf.keras.models.Sequential(
-        [
-            # layers here
-        ]
-    )
-
-    model.compile(optimizer="...", loss="...", metrics=["..."])
-
-    return model
 
 
-def save_model(model, path="path/to/save/model"):
-    model.save(path)
 
 
-def load_model(path="path/to/load/from"):
-    return tf.keras.models.load_model(path)
