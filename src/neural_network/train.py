@@ -121,7 +121,9 @@ def model_pred_eval(model_1s, X_eval, y_eval, X_test, y_test):
 
 if __name__ == "__main__":
     parkingRecords, trackingRecords = load_data()
-    X_train, X_eval, X_test, y_train, y_eval, y_test = preprocess_data(trackingRecords)
+    X_train, X_eval, X_test, y_train, y_eval, y_test = preprocess_data(
+        parkingRecords, trackingRecords
+    )
     model = train_model(X_train, y_train)
     save_model(model)
     model_pred_eval(model, X_eval, y_eval, X_test, y_test)
