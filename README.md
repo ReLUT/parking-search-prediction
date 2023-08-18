@@ -3,7 +3,7 @@ Parking search prediction model based on the ground truth data collected in star
 
 <img align="top" src="docs/images/start2park_logo.jpg" width="30%" height="30%">
 
-## When does the search begins?
+## When does the search begin?
 
 This model is designed to predict the starting point of a parking search within a GPS trajectory. 
 It leverages ground truth data, which includes the precise onset of the parking search, to train the 
