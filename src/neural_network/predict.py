@@ -218,90 +218,92 @@ def make_predictions(model, X_, col_ID=None, optimal_p=0.62, verbose=0, max_sear
     return y_hat_df
 
 ### Make Predictions For New Data
-def park_search_predict(df,
-                        p_search=0.62,
-                        col_ID=None,
-                        col_time='timestamp',
-                        col_speed='speed_kmh',
-                        col_lat='lat',
-                        col_lon='lon',
-                        max_search_duration=15,
-                        verbose=0):
+    def park_search_predict(df,
+                            model_path='ParkingSearchPrediction.h5',
+                            p_search=0.62,
+                            col_ID=None,
+                            col_time='timestamp',
+                            col_speed='speed_kmh',
+                            col_lat='lat',
+                            col_lon='lon',
+                            max_search_duration=15,
+                            verbose=0):
+        """
+        This predicts the probability of each GPS point in a GPS trajectory being
+        a parking search point. Based on the evaluation dataset, the optimal probability
+        to label the GPS points as "Searching" is 0.62, which is the defualt value.
+        This can also be modified if necessary.
+        This model uses only speed, sampling rate, and distance to destination to
+        make the predictions. The resulting dataframe contains two new columns:
+            "y_hat_p": This gives the probability of the point being parking search
+            "y_hat_labels": This is a binary label in ['Driving', 'Searching']
 
-    """
-    This predicts the probability of each GPS point in a GPS trajectory being
-    a parking search point. Based on the evaluation dataset, the optimal probability
-    to label the GPS points as "Searching" is 0.62, which is the defualt value.
-    This can also be modified if necessary.
-    This model uses only speed, sampling rate, and distance to destination to
-    make the predictions. The resulting dataframe contains two new columns:
-        "y_hat_p": This gives the probability of the point being parking search
-        "y_hat_labels": This is a binary label in ['Driving', 'Searching']
+        Parameters
+        ----------
+        df: pandas.DataFrame
+            The dataframe containing the trajectories
+        model_path: str
+            path to the prediction model
+        p_search : float
+            The cut-off probability for binary classification of GPS points
+            into "Driving" and "Searching"
+            default: 0.62
+        col_ID : str
+            Name of the column that contains the Trajectories' uniqe ID. If
+            there is only a single trajectory in the dataframe, set it as None
+            default: None
+        col_time: str
+            Name of the column that contains the timestamp of the GPS points
+            default: 'timestamp'
+        col_speed: str
+            Name of the column that contains the speed of the GPS points in km/h
+            default: 'speed_kmh'
+        col_lat: str
+            Name of the column that contains the latitude of the GPS points
+            default: 'lat'
+        col_lon: str
+            Name of the column that contains the longitude of the GPS points
+            default: 'lon'
+        max_search_duration: int
+            Maximum predicted search duration in minutes
+            default: 15
+        verbose: 'auto', 0, 1, or 2
+            Visualizing the prediction progress.
+            0 = silent, 1 = progress bar, 2 = one line per epoch.
+            default: 0
 
-    Parameters
-    ----------
-    df: pandas.DataFrame
-        The dataframe containing the trajectories
-    p_search : float
-        The cut-off probability for binary classification of GPS points
-        into "Driving" and "Searching"
-        default: 0.62
-    col_ID : str
-        Name of the column that contains the Trajectories' uniqe ID. If
-        there is only a single trajectory in the dataframe, set it as None
-        default: None
-    col_time: str
-        Name of the column that contains the timestamp of the GPS points
-        default: 'timestamp'
-    col_speed: str
-        Name of the column that contains the speed of the GPS points in km/h
-        default: 'speed_kmh'
-    col_lat: str
-        Name of the column that contains the latitude of the GPS points
-        default: 'lat'
-    col_lon: str
-        Name of the column that contains the longitude of the GPS points
-        default: 'lon'
-    max_search_duration: int
-        Maximum predicted search duration in minutes
-        default: 15
-    verbose: 'auto', 0, 1, or 2
-        Visualizing the prediction progress.
-        0 = silent, 1 = progress bar, 2 = one line per epoch.
-        default: 0
+        Returns
+        --------
+        pandas.DataFrame
+            Input dataframe with two added columns:
+                1) y_hat_p: predicted probabilities
+                2) y_hat_labels: binary classification
+        """
 
-    Returns
-    --------
-    pandas.DataFrame
-        Input dataframe with two added columns:
-            1) y_hat_p: predicted probabilities
-            2) y_hat_labels: binary classification
-    """
+        # check probability value
+        if 0>p_search or p_search>1:
+            raise ValueError('p_search must be between 0 and 1')
+        # preprocess data
+        df_pred = prepare_data(df,
+                               n_lagged_Vars=5,
+                               col_ID=col_ID,
+                               col_time=col_time,
+                               col_speed=col_speed,
+                               col_lat=col_lat,
+                               col_lon=col_lon)
 
-    # check probability value
-    if 0>p_search or p_search>1:
-        raise ValueError('p_search must be between 0 and 1')
-    # preprocess data
-    df_pred = prepare_data(df,
-                           n_lagged_Vars=5,
-                           col_ID=col_ID,
-                           col_time=col_time,
-                           col_speed=col_speed,
-                           col_lat=col_lat,
-                           col_lon=col_lon)
+        # calculate remaining time to parking for each Point
+        df_pred = remaining_Time(df_pred,
+                                 col_ID=col_ID,
+                                 col_time=col_time)
+        # load prediction model
+        model = load_model(path=model_path)
+        # make predictions
+        df_pred  = make_predictions(model,
+                                    X_=df_pred,
+                                    col_ID=col_ID,
+                                    optimal_p=p_search,
+                                    verbose=verbose,
+                                    max_search_duration=max_search_duration)
 
-    # calculate remaining time to parking for each Point
-    df_pred = remaining_Time(df_pred,
-                             col_ID=col_ID,
-                             col_time=col_time)
-    # load prediction model
-    model_pred = load_model()
-    # make predictions
-    df_pred  = make_predictions(model_pred,
-                                X_=df_pred,
-                                col_ID=col_ID,
-                                optimal_p=p_search,
-                                verbose=verbose,
-                                max_search_duration=max_search_duration)
-
-    return df_pred
+        return df_pred
