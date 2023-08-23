@@ -19,21 +19,16 @@ def load_csv(file_path):
     except Exception as e:
         raise ValueError("Error reading the CSV file. Please check its format.") from e
 
-
-def check_number_of_columns(data):
-    if data.shape[1] != 4:
-        raise ValueError(f"Expected 4 columns, but got {data.shape[1]} columns.")
-
-
 ### Content Tests:
 
 
 def check_header_names(data):
     expected_headers = ["lon", "lat", "timestamp", "speed_kmh"]
-    if list(data.columns) != expected_headers:
-        raise ValueError(
-            f"Expected headers {expected_headers}, but got {list(data.columns)}"
-        )
+    for col in expected_headers:
+        if col not in list(data.columns):
+            raise ValueError(
+                f"{col} is not included in the header."
+            )
 
 
 def check_data_types(data):
@@ -187,7 +182,6 @@ def validate_csv(
     # Format Tests
     check_file_extension(file_path)
     data = load_csv(file_path)
-    check_number_of_columns(data)
 
     # Content Tests
     check_header_names(data)

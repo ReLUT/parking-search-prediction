@@ -16,10 +16,9 @@ Here's a list of tests to ensure the quality and integrity of the uploaded CSV f
 **Format Tests**:
 1. File Extension: Ensure that the uploaded file has a .csv extension.
 2. Valid CSV Format: Ensure that the file is correctly delimited (typically by commas) and has valid rows and columns.
-3. Number of Columns: The CSV should have exactly 4 columns: lon, lat, timestamp, and speed_kmh.
 
 **Content Tests**:
-1. Header Names: Check if the headers are exactly lon, lat, timestamp, and speed_kmh.
+1. Header Names: Check if the lon, lat, timestamp, and speed_kmh are included in the headers.
 2. Data Type Checks:
     lon and lat should be valid floating point numbers.
     timestamp can be a UNIX timestamp or a standardized datetime format.
