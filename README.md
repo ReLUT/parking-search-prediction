@@ -35,7 +35,7 @@ Deep learning neural network with two hidden layers.
 
 ## Project Partners
 
-`star2park` reasearch project is a result of a joint work of following partners:
+Data collection in `star2park` reasearch project is a result of a joint work of following partners:
 
 - Frankfurt University of Applied Sciences, Frankfurt am Main
 - Fluxguide Ausstellungssysteme GmbH, Wien (Österreich)
