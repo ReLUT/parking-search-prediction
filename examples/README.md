@@ -42,3 +42,8 @@ Install the dependencies:
 - keras=2.11.*
 - contextily=1.3.*
 - folium=0.14.*
+
+
+# Notebook with dynamic map output
+You can open the notebook using nbviewer in [this link](https://nbviewer.org/github/ReLUT/parking-search-prediction/blob/main/examples/ParkingSearchPrediction.ipynb) to see the dynamic map outputs.
+
