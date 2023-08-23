@@ -177,6 +177,18 @@ trained_vars = [
     "sampRate_lag5",
 ]
 
+redundant_cols = [
+        "speed_lag1",
+        "speed_lag2",
+        "speed_lag3",
+        "speed_lag4",
+        "speed_lag5",
+        "sampRate_lag1",
+        "sampRate_lag2",
+        "sampRate_lag3",
+        "sampRate_lag4",
+        "sampRate_lag5",
+    ]
 
 
 def make_predictions(model, X_, col_ID=None, optimal_p=0.62, verbose=0, max_search_duration=15):
@@ -213,6 +225,11 @@ def make_predictions(model, X_, col_ID=None, optimal_p=0.62, verbose=0, max_sear
                           (y_hat_df['remainingTime']>max_search_duration*60)].index
     y_hat_df.loc[idx_extreme, 'y_hat_labels_clean']='driving'
 
+    y_hat_df.drop(columns=['y_hat_binary','y_hat_labels'], inplace=True)
+    y_hat_df.rename(columns={'y_hat_labels_clean':'y_hat_labels'}, inplace=True)
+
+    y_hat_df.drop(columns=redundant_cols, inplace=True)
+    y_hat_df.rename(columns={"sampRate_lag0":"samplingRate"}, inplace=True)
 
 
     return y_hat_df
