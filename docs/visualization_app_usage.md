@@ -41,9 +41,8 @@ Here's a list of tests to ensure the quality and integrity of the uploaded CSV f
 
 **Sanity Checks**:
 1. Static Points: If the speed is 0 km/h for a very long time, it might be an indication that the device was off or not moving. Depending on your use case, you might want to flag or exclude these from analysis.
-2. Speed vs. Distance: Check if the calculated distance between two consecutive points matches the recorded speed and timestamp. Huge discrepancies might indicate incorrect data.
-3. Timestamp Frequency: Check if there are irregular gaps in timestamps, which might suggest missing data or recording errors.
-4. Average Timestamp Frequency: Check if the median time frequency is less than 20 seconds.
+2. Timestamp Frequency: Check if there are irregular gaps in timestamps, which might suggest missing data or recording errors.
+3. Average Timestamp Frequency: Check if the median time frequency is less than 20 seconds.
 
 **User Feedback**:
 Error Messages: Whenever a test fails, provide a clear and helpful error message to the user so they know how to correct the issue. For instance, if the latitudes are out of bounds, inform the user which rows have incorrect latitudes and provide the accepted range.
