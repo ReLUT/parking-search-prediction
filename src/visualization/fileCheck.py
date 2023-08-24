@@ -1,5 +1,4 @@
 import os
-import math
 import pandas as pd
 
 
@@ -114,42 +113,6 @@ def check_static_points(data, max_duration=pd.Timedelta("1 hour")):
             raise ValueError("Detected static points exceeding the allowable duration.")
 
 
-def haversine_distance(lon1, lat1, lon2, lat2):
-    """Calculate the Haversine distance between two GPS points."""
-    R = 6371  # Earth's radius in km
-
-    d_lat = math.radians(lat2 - lat1)
-    d_lon = math.radians(lon2 - lon1)
-
-    a = math.sin(d_lat / 2) * math.sin(d_lat / 2) + math.cos(
-        math.radians(lat1)
-    ) * math.cos(math.radians(lat2)) * math.sin(d_lon / 2) * math.sin(d_lon / 2)
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    distance = R * c
-
-    return distance  # Distance in km
-
-
-def check_speed_distance_consistency(data):
-    for i in range(1, len(data)):
-        dist = haversine_distance(
-            data.at[i - 1, "lon"],
-            data.at[i - 1, "lat"],
-            data.at[i, "lon"],
-            data.at[i, "lat"],
-        )
-        time_diff = (
-            data.at[i, "timestamp"] - data.at[i - 1, "timestamp"]
-        ).seconds / 3600  # Time difference in hours
-        calculated_speed = dist / time_diff  # km/h
-        if (
-            abs(calculated_speed - data.at[i, "speed_kmh"]) > 5
-        ):  # Threshold of 5 km/h difference
-            raise ValueError(
-                f"Inconsistency between speed and distance at row {i + 1}."
-            )
-
-
 def check_timestamp_gaps(data, max_gap=pd.Timedelta("1 hour")):
     gaps = data["timestamp"].diff().fillna(pd.Timedelta("0 days"))
     if (gaps > max_gap).any():
@@ -175,6 +138,7 @@ def validate_csv(
     static_max_duration=pd.Timedelta("1 hour"),
     timestamp_gap=pd.Timedelta("1 hour"),
     max_interval_seconds=20,
+    verbose=False
 ):
     """
     Validate a given CSV file against a set of predefined checks.
@@ -199,13 +163,8 @@ def validate_csv(
 
     # Sanity Checks
     check_static_points(data, static_max_duration)
-    check_speed_distance_consistency(data)
     check_timestamp_gaps(data, timestamp_gap)
     check_median_time_interval(data, max_interval_seconds)
 
-    print("CSV validation successful!")
-
-
-# Now, use the validate_csv function
-file_path = "path_to_your_file.csv"
-validate_csv(file_path)
+    if verbose:
+        print("CSV validation successful!")
