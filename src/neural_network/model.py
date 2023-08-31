@@ -1,23 +1,15 @@
 import numpy as np
 import pandas as pd
+import random
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-from sklearn.preprocessing import MinMaxScaler, LabelEncoder, StandardScaler
-from sklearn.model_selection import train_test_split
 from sklearn.utils import class_weight
-from scipy.signal import argrelextrema
 
 
-from keras.utils import to_categorical
-from keras_preprocessing.sequence import pad_sequences
 from keras.models import Sequential
 from keras.layers import Dense, Dropout
-from keras import metrics
 from keras import backend as K
 
-import matplotlib.dates as mdates
-from matplotlib.dates import date2num
 from datetime import timedelta
 
 
@@ -89,82 +81,82 @@ def remaining_Time(group):
 
 
 def train_test(
-    df,
-    label="status",
-    trip_ID="parkingRecordId",
-    variables=["distToParkingSpot", "speed_kmh"],
-    random_state=0,
-    train_size=0.8,
-    eval_set=True,
-    test_eval_ratio=0.50,
+        df,
+        trip_ID="parkingRecordId",
+        variables=["distToParkingSpot", "speed_kmh"],
+        random_state=0,
+        n_splits=10,
+        fold_variation=1,
 ):
     """
+    In this function, we first get the unique trip IDs and then split them into
+    n_splits sections. Based on the fold_variation, we determine which section
+    will be used for testing, which for validation, and which for training.
+    Finally, we filter the original DataFrame to create the train, validation,
+    and test DataFrames.
+
+
     Parameters
     =============
     df: a dataframe of the waypoints.
-    e.g., in start2park that would be trackingRecords
+    trip_ID: column name containing the unique trip IDs
     variables: a list of variables that should be included in training the model
     e.g. variables are: ['status', 'distToParkingSpot','speed_kmh','time_sin',
                          'time_cos','dayOfWeek','dayOfWeek','RegioStaR',
                          'temperature','wind_speed','precipitation_height']
-    eval_set: if True, an evaluation set is also created.
-    test_eval_ratio: this determines what percent of the rest data should be
-    allocated to test set and the rest will be allocated to evaluation test
+    n_splits: number of folds to split the dataframe
+    fold_variation: a number between 1 and n_splits. It indicates which variation is returning.
 
     Return
     ==============
-    train, test, eval dataframes
-
+    df_train, df_validation, df_test dataframes
     """
 
-    # trips IDs in train set
-    train_ID = (
-        pd.Series(df[trip_ID].unique())
-        .sample(random_state=random_state, n=int(df[trip_ID].nunique() * train_size))
-        .values
-    )
-    # Create train sets
-    train = df[df[trip_ID].isin(train_ID)]
+    # Get the unique trip IDs
+    unique_trip_ids = df[trip_ID].unique().tolist()
 
-    X_train = train[variables]
+    # Set the random seed for reproducibility
+    random.seed(random_state)
+
+    # Shuffle the list
+    random.shuffle(unique_trip_ids)
+
+    # Calculate the size of each section
+    section_size = len(unique_trip_ids) // n_splits
+
+    # Initialize lists to store the sections of trip IDs
+    sections = []
+
+    # Loop to create each section of trip IDs
+    for i in range(n_splits):
+        start_idx = i * section_size
+        end_idx = (i + 1) * section_size if i < n_splits - 1 else len(unique_trip_ids)
+        section = unique_trip_ids[start_idx:end_idx]
+        sections.append(section)
+
+    # Determine the test, validation, and train sections based on fold_variation
+    test_section = sections[fold_variation - 1]
+    validation_section = sections[fold_variation % n_splits]
+    train_sections = [sec for i, sec in enumerate(sections) if
+                      i != fold_variation - 1 and i != fold_variation % n_splits]
+    train_section = [item for sublist in train_sections for item in sublist]
+
+    # Create the test, validation, and train dataframes
+    df_test = df[df[trip_ID].isin(test_section)]
+    df_validation = df[df[trip_ID].isin(validation_section)]
+    df_train = df[df[trip_ID].isin(train_section)]
+
+    # Craete X datasets
+    X_train = df_train[variables]
+    X_validation = df_validation[variables]
+    X_test = df_test[variables]
+
+    # dummifies categorical variables if there is any
     X_train = pd.get_dummies(X_train, drop_first=True).astype(float)
+    X_validation = pd.get_dummies(X_validation, drop_first=True).astype(float)
+    X_test = pd.get_dummies(X_test, drop_first=True).astype(float)
 
-    y_train = df[df[trip_ID].isin(train_ID)]
-
-    # rest of the data
-    rest = df[~df[trip_ID].isin(train_ID)]
-
-    if eval_set:
-        # dividing rest set into test and eval
-        test_ID = (
-            pd.Series(rest[trip_ID].unique())
-            .sample(
-                random_state=random_state,
-                n=int(rest[trip_ID].nunique() * test_eval_ratio),
-            )
-            .values
-        )
-        test = rest[rest[trip_ID].isin(test_ID)]
-        evaluation = rest[~rest[trip_ID].isin(test_ID)]
-
-        X_eval = evaluation[variables]
-        X_eval = pd.get_dummies(X_eval, drop_first=True).astype(float)
-        y_eval = df[~df[trip_ID].isin(np.concatenate([train_ID, test_ID]))]
-
-        # create test set
-        X_test = test[variables]
-        X_test = pd.get_dummies(X_test, drop_first=True).astype(float)
-        y_test = df[df[trip_ID].isin(test_ID)]
-
-        return X_train, y_train, X_eval, y_eval, X_test, y_test
-
-    else:
-        # create test set
-        X_test = rest[variables]
-        X_test = pd.get_dummies(X_test, drop_first=True).astype(float)
-        y_test = df[~df[trip_ID].isin(train_ID)]
-
-        return X_train, y_train, X_test, y_test
+    return X_train, df_train, X_validation, df_validation, X_test, df_test
 
 
 def nn_model(
@@ -376,7 +368,7 @@ def best_cutoff_p(model, X_eval, y_eval, p_low, p_high, metric_psd="MAE", verbos
         [metric_df[["p"]], metric_df.applymap(dur_show).drop(columns="p")], axis=1
     )
     #     #metric: PSD mean and MAE (or RMSE)
-    #     metric_df['final_metric'] = metric_df[metric_psd]+metric_df['PSD_mean']-axtual_test_psd_mean
+    #     metric_df['final_metric'] = metric_df[metric_psd]+metric_df['PSD_mean']-actual_test_psd_mean
     #     optimal_p= metric_df[metric_df['final_metric']==metric_df['final_metric'].min()]['p'].iloc[0]
 
     return metric_df, optimal_p
@@ -478,10 +470,6 @@ def prepare_data(df, n_lagged_Vars=5):
     df_model["time_sin"] = np.sin(theta)
     df_model["time_cos"] = np.cos(theta)
 
-    # VARIABLEs: day, geographical zone, weather and all other
-    idx_temp = df_model.index
-    df_model = pd.merge(df_model, parkingRecords, how="left", on="parkingRecordId")
-    df_model.index = idx_temp
 
     ########## CREATE LAGGED VARIABLES: Speed
     for i in range(1, n_lagged_Vars + 1):  # creates 5 lagged variables by defualt value
@@ -504,7 +492,7 @@ def prepare_data(df, n_lagged_Vars=5):
         .dt.total_seconds()
         .fillna(0)
     )
-    for i in range(1, n_lagged_Vars + 1):  # creates 5 lagged variables by defualt value
+    for i in range(1, n_lagged_Vars + 1):  # creates 5 lagged variables by default value
         df_model[f"sampRate_lag{i}"] = df_model.groupby("parkingRecordId")[
             "sampRate_lag0"
         ].shift(i)
@@ -516,7 +504,7 @@ def prepare_data(df, n_lagged_Vars=5):
     ########## CREATE Location Difference: Lat and Lon diff
     df_model["lonDiff_0"] = df_model.groupby("parkingRecordId")["lon"].diff().fillna(0)
     df_model["latDiff_0"] = df_model.groupby("parkingRecordId")["lat"].diff().fillna(0)
-    for i in range(1, n_lagged_Vars + 1):  # creates 5 lagged variables by defualt value
+    for i in range(1, n_lagged_Vars + 1):  # creates 5 lagged variables by default value
         df_model[f"lonDiff_{i}"] = df_model.groupby("parkingRecordId")[
             "lonDiff_0"
         ].shift(i)
