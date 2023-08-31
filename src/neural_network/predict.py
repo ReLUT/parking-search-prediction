@@ -191,7 +191,7 @@ redundant_cols = [
     ]
 
 
-def make_predictions(model, X_, col_ID=None, optimal_p=0.62, verbose=0, max_search_duration=15):
+def make_predictions(model, X_, col_ID=None, optimal_p=0.62, verbose=0, max_search_duration=False):
 
 
     y_hat = model.predict(X_[trained_vars], verbose=verbose)
@@ -219,17 +219,17 @@ def make_predictions(model, X_, col_ID=None, optimal_p=0.62, verbose=0, max_sear
             [predictions_clean(group) for _, group in y_hat_df.groupby(col_ID)]
         )
 
+    if type(max_search_duration)==int:
+        # max PSD set as provided limit: default 15 min
+        idx_extreme= y_hat_df[(y_hat_df['y_hat_labels_clean']=='searching') & \
+                              (y_hat_df['remainingTime']>max_search_duration*60)].index
+        y_hat_df.loc[idx_extreme, 'y_hat_labels_clean']='driving'
 
-    # max PSD set as provided limit: default 15 min
-    idx_extreme= y_hat_df[(y_hat_df['y_hat_labels_clean']=='searching') & \
-                          (y_hat_df['remainingTime']>max_search_duration*60)].index
-    y_hat_df.loc[idx_extreme, 'y_hat_labels_clean']='driving'
+        y_hat_df.drop(columns=['y_hat_binary','y_hat_labels'], inplace=True)
+        y_hat_df.rename(columns={'y_hat_labels_clean':'y_hat_labels'}, inplace=True)
 
-    y_hat_df.drop(columns=['y_hat_binary','y_hat_labels'], inplace=True)
-    y_hat_df.rename(columns={'y_hat_labels_clean':'y_hat_labels'}, inplace=True)
-
-    y_hat_df.drop(columns=redundant_cols, inplace=True)
-    y_hat_df.rename(columns={"sampRate_lag0":"samplingRate"}, inplace=True)
+        y_hat_df.drop(columns=redundant_cols, inplace=True)
+        y_hat_df.rename(columns={"sampRate_lag0":"samplingRate"}, inplace=True)
 
 
     return y_hat_df
@@ -243,7 +243,7 @@ def park_search_predict(df,
                         col_speed='speed_kmh',
                         col_lat='lat',
                         col_lon='lon',
-                        max_search_duration=15,
+                        max_search_duration=False,
                         verbose=0):
     """
     This predicts the probability of each GPS point in a GPS trajectory being
@@ -281,9 +281,9 @@ def park_search_predict(df,
     col_lon: str
         Name of the column that contains the longitude of the GPS points
         default: 'lon'
-    max_search_duration: int
-        Maximum predicted search duration in minutes
-        default: 15
+    max_search_duration: int, bool
+        Maximum predicted search duration in minutes. If False no limit.
+        default: False
     verbose: 'auto', 0, 1, or 2
         Visualizing the prediction progress.
         0 = silent, 1 = progress bar, 2 = one line per epoch.
