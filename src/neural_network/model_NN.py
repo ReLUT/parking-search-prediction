@@ -69,6 +69,8 @@ def show_eval(
     if display_RMSE:
         print("root mean squared error: ", dur_show(RMSE, unit="min"))
 
+    return MAE
+
 
 def remaining_Time(group):
     """
@@ -87,6 +89,7 @@ def train_test(
         random_state=0,
         n_splits=10,
         fold_variation=1,
+        validation_set=False
 ):
     """
     In this function, we first get the unique trip IDs and then split them into
@@ -134,29 +137,46 @@ def train_test(
         section = unique_trip_ids[start_idx:end_idx]
         sections.append(section)
 
-    # Determine the test, validation, and train sections based on fold_variation
-    test_section = sections[fold_variation - 1]
-    validation_section = sections[fold_variation % n_splits]
-    train_sections = [sec for i, sec in enumerate(sections) if
-                      i != fold_variation - 1 and i != fold_variation % n_splits]
-    train_section = [item for sublist in train_sections for item in sublist]
+    if validation_set:
+        # Determine the test, validation, and train sections based on fold_variation
+        test_section = sections[fold_variation - 1]
+        validation_section = sections[fold_variation % n_splits]
+        train_sections = [sec for i, sec in enumerate(sections) if
+                          i != fold_variation - 1 and i != fold_variation % n_splits]
+        train_section = [item for sublist in train_sections for item in sublist]
 
-    # Create the test, validation, and train dataframes
-    df_test = df[df[trip_ID].isin(test_section)]
-    df_validation = df[df[trip_ID].isin(validation_section)]
-    df_train = df[df[trip_ID].isin(train_section)]
+        # Create the test, validation, and train dataframes
+        df_test = df[df[trip_ID].isin(test_section)]
+        df_validation = df[df[trip_ID].isin(validation_section)]
+        df_train = df[df[trip_ID].isin(train_section)]
 
-    # Craete X datasets
-    X_train = df_train[variables]
-    X_validation = df_validation[variables]
-    X_test = df_test[variables]
+        # Create X datasets
+        X_train = df_train[variables]
+        X_validation = df_validation[variables]
+        X_test = df_test[variables]
 
-    # dummifies categorical variables if there is any
-    X_train = pd.get_dummies(X_train, drop_first=True).astype(float)
-    X_validation = pd.get_dummies(X_validation, drop_first=True).astype(float)
-    X_test = pd.get_dummies(X_test, drop_first=True).astype(float)
+        # dummifies categorical variables if there is any
+        X_train = pd.get_dummies(X_train, drop_first=True).astype(float)
+        X_validation = pd.get_dummies(X_validation, drop_first=True).astype(float)
+        X_test = pd.get_dummies(X_test, drop_first=True).astype(float)
 
-    return X_train, df_train, X_validation, df_validation, X_test, df_test
+        return X_train, df_train, X_validation, df_validation, X_test, df_test
+
+    else:
+        # Determine the test, and train sets
+        test_section = sections[fold_variation - 1]
+        df_test = df[df[trip_ID].isin(test_section)]
+        df_train = df[~df[trip_ID].isin(test_section)]
+
+        # Create X datasets
+        X_train = df_train[variables]
+        X_test = df_test[variables]
+
+        # dummifies categorical variables if there is any
+        X_train = pd.get_dummies(X_train, drop_first=True).astype(float)
+        X_test = pd.get_dummies(X_test, drop_first=True).astype(float)
+
+        return X_train, df_train, X_test, df_test
 
 
 def nn_model(
@@ -236,7 +256,7 @@ def predictions_clean(group):
     return trip_waypoints_pred
 
 
-def make_clean_preds(model, X_test, y_test, optimal_p=0.5, verbose=0):
+def make_clean_preds(model, X_test, y_test, optimal_p=0.5, verbose=0, max_psd=False):
     """
     make predictions for a test set
     """
@@ -259,12 +279,13 @@ def make_clean_preds(model, X_test, y_test, optimal_p=0.5, verbose=0):
         [predictions_clean(group) for _, group in y_pred.groupby("parkingRecordId")]
     )
 
-    # max PSD set as 15 min
-    idx_extreme = y_pred[
-        (y_pred["status_pred_clean"] == "searching")
-        & (y_pred["remainingTime"] > 15 * 60)
-    ].index
-    y_pred.loc[idx_extreme, "status_pred_clean"] = "driving"
+    if max_psd:
+        # max PSD set as 15 min
+        idx_extreme = y_pred[
+            (y_pred["status_pred_clean"] == "searching")
+            & (y_pred["remainingTime"] > 15 * 60)
+        ].index
+        y_pred.loc[idx_extreme, "status_pred_clean"] = "driving"
 
     return y_pred
 
@@ -345,22 +366,24 @@ def best_cutoff_p(model, X_eval, y_eval, p_low, p_high, metric_psd="MAE", verbos
         PSD_mean_ls.append(int(PSD_mean * 60))
 
     metric_df = pd.DataFrame(
-        {"p": cut_p_ls, "MAE": MAE_ls, "RMSE": RMSE_ls, "PSD_mean": PSD_mean_ls}
+        {"p": cut_p_ls, "MAE": MAE_ls, "RMSE": RMSE_ls, "MPSD_pred": PSD_mean_ls}
     )
 
     axtual_test_psd_mean = int(results_model["parkingSearchDuration [min]"].mean() * 60)
 
+    metric_df["MPSD_actual"] = axtual_test_psd_mean
+
     # metric: lowest MAE (or RMSE) and then PSD mean
-    metric_df["PSD_diff"] = (metric_df["PSD_mean"] - axtual_test_psd_mean).apply(np.abs)
+    metric_df["MPSD_diff"] = (metric_df["MPSD_pred"] - axtual_test_psd_mean).apply(np.abs)
 
     if metric_psd in ["MAE", "RMSE"]:
         lowest_MAE = metric_df[metric_psd].min()
         min_index = metric_df[
-            metric_df[metric_psd].isin(list(range(lowest_MAE, lowest_MAE + 3)))
-        ]["PSD_diff"].idxmin()
+            metric_df[metric_psd].isin(list(range(lowest_MAE-1, lowest_MAE + 1)))
+        ]["MPSD_diff"].idxmin()
         optimal_p = metric_df.loc[min_index, "p"]
     elif metric_psd == "PSD_mean":
-        min_index = metric_df["PSD_diff"].idxmin()
+        min_index = metric_df["MPSD_diff"].idxmin()
         optimal_p = metric_df.loc[min_index, "p"]
     else:
         raise
