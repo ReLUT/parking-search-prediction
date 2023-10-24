@@ -196,7 +196,8 @@ redundant_cols = [
 # Defining the sampRateMedian values and their corresponding cut-off points
 # These optimal cut-off points are retrieved from the second step of training the model
 samp_rate_values = [1, 5, 10, 15]
-cut_off_points = [0.51, 0.37, 0.33, 0.31]
+cut_off_points = [0.527, 0.395, 0.341, 0.316]
+
 
 def classify(row):
     """
@@ -270,8 +271,8 @@ def make_predictions(model,
         y_hat_df.drop(columns=redundant_cols, inplace=True)
         y_hat_df.rename(columns={"sampRate_lag0": "samplingRate"}, inplace=True)
 
-    y_hat_df['y_hat_labels']=y_hat_df['y_hat_labels_clean']
-    y_hat_df.drop(columns=['y_hat_binary','y_hat_labels_clean'], inplace=True)
+    y_hat_df['y_hat_labels'] = y_hat_df['y_hat_labels_clean']
+    y_hat_df.drop(columns=['y_hat_binary', 'y_hat_labels_clean'], inplace=True)
 
     return y_hat_df
 

@@ -63,6 +63,13 @@ def preprocess_data(parkingRecords, trackingRecords, freq=None, n_splits=10, fol
 
 
 def preprocess_data_FinalModel(parkingRecords, trackingRecords):
+
+    """
+    This function is used to prepare a final dataset which contains all the data.
+    This dataset is used to train the final model which is used to predict parking
+    search in unlabeled datasets.
+    """
+
     # Preprocess data here
     parkingRecords = parkingRecords
     ########## CREATE DATASET

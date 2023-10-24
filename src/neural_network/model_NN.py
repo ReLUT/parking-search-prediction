@@ -94,7 +94,7 @@ def train_test(
     """
     In this function, we first get the unique trip IDs and then split them into
     n_splits sections. Based on the fold_variation, we determine which section
-    will be used for testing, which for validation, and which for training.
+    will be used for testing and which for training.
     Finally, we filter the original DataFrame to create the train, validation,
     and test DataFrames.
 
