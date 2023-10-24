@@ -16,7 +16,7 @@ predictive algorithm.
 Our `start2park` mobile app simplifies the collection of ground truth data for parking search. 
 User-friendly and efficient, the app's main screen is designed for quick interactions.
 
-![app_mainScreen.jpg](docs%2Fimages%2Fapp_mainScreen.jpg)
+![app_mainScreen.jpg](docs%2Fimages%2Fapp_mainScreen.png)
 
 **Four-Step Data Collection:**
 
