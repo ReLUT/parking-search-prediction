@@ -120,7 +120,7 @@ with other data sets.
 
 ## Project Partners
 
-Data collection in `star2park` reasearch project is a result of a joint work of following partners:
+Data collection in `star2park` research project is a result of a joint work of following partners:
 
 - Frankfurt University of Applied Sciences, Frankfurt am Main
 - Fluxguide Ausstellungssysteme GmbH, Wien (Österreich)
@@ -128,7 +128,7 @@ Data collection in `star2park` reasearch project is a result of a joint work of 
 
 ## Acknowledgements
 This parking search prediction model is the result of the research project 
-[start2park](https://www.start2park.com) conducted by the 
+[start2park](https://www.frankfurt-university.de/en/about-us/faculty-1/research-institute-ffin/specialist-groups-of-the-ffin/relut/research-projects-relut/start2park/) conducted by the 
 [Research Lab for Urban Transport](https://www.frankfurt-university.de/en/about-us/faculty-1-architecture-civil-engineering-geomatics/research-institute-ffin/specialist-groups-of-the-ffin/specialist-group-new-mobility/relut/). 
 This research project is funded by the German Federal Ministry for Digital and Transport (BMDV) 
 funding under the “mFUND” funding program. [FKZ: 19F2114A]
